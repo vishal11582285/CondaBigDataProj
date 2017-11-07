@@ -5,48 +5,35 @@ Created on Mon Oct 30 23:50:55 2017
 @author: User
 """
 
-from collections import defaultdict
+from basefunctions import *
 
-def refine(temp):
-    c=0
-    skipWords=[",",".",")","("]
-    for i in temp:
-        if(any(n in i for n in skipWords)):  
-            i=i[0:(len(i)-1)]
-            temp[c]=i
-        c+=1
-    return temp
-a=2
-
-def find_ngrams(input_list, n):
-  return zip(*[input_list[i:] for i in range(n)])
-
-import os
-import nltk as nlt
-
-path="data/aclImdb/train/pos"
-fileNames=os.listdir(os.path.abspath(path))
-
-print(fileNames)
-fileContents=[]
-
-currentFile=fileNames[0]
-openFile=open(path+"\\"+currentFile,'r')
-
-fileContents.append(openFile.readline())
-
-tokens=str(fileContents[0]).split(" ")
-# print(tokens)
-tokens = refine(tokens)
+path = "data/aclImdb/train/pos"
+fileContents=readFiles(path,howManyFiles=13000)
+tokens = refine(fileContents)
 words=nlt.trigrams(tokens)
-d = defaultdict(int)
+positiveVectDict=wordFreqGenerator(words)
 
-for i in list(words):
-    # print(i,end="\n")
-    d[i] += 1
-
-for i in set(zip(d.keys(),d.values())):
+path = "data/"
+outputResult= open(path+"/"+"outputResult.txt", 'w',encoding="utf8")
+outputResult.write("Positive Reviews Summary: \n\n")
+for i in positiveVectDict.items():
     print(i)
+    outputResult.write(str(i))
 
-# for i in list(words):
-#     print(i,end="\n")
+temp="There are " + str(positiveVectDict.__len__()) +"Positive Trigrams in Dictionary.\n\n"
+outputResult.write(temp)
+
+outputResult.write("Negative Reviews Summary:\n\n")
+path = "data/aclImdb/train/neg"
+fileContents=readFiles(path,howManyFiles=12500)
+tokens = refine(fileContents)
+words=nlt.trigrams(tokens)
+negativeVectDict=wordFreqGenerator(words)
+for i in negativeVectDict.items():
+    print(i)
+    outputResult.write(str(i))
+
+temp="There are " + str(negativeVectDict.__len__()) +"Negative Trigrams in Dictionary.\n\n"
+outputResult.write(temp)
+
+outputResult.close()
