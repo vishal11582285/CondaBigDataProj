@@ -6,9 +6,9 @@ from collections import defaultdict, OrderedDict
 import nltk as nlt
 from nltk.corpus import stopwords
 
-max_file_limit =1000
+max_file_limit =10000
 global_nature=""
-GroupLabel=dict()
+# GroupLabel=dict()
 wordVocab=defaultdict()
 
 def refineSentence(fileContents):
@@ -34,7 +34,10 @@ def refine(fileContents):
 def readFiles(path, howManyFiles):
     fileNames = os.listdir(os.path.abspath(path))
     fileContents = []
+    fileRatings=[]
     a = 1
+    # print(fileNames[0:howManyFiles])
+    GroupLabel=[]
     for current in fileNames[0:howManyFiles]:
         with open(path + "//" + current, 'r', encoding="utf8") as openFile:
             sys.stdout.write('\r')
@@ -44,11 +47,13 @@ def readFiles(path, howManyFiles):
             readContent=openFile.readline()
             fileContents.append(readContent)
             abc=' '.join(refine(readContent))
-            global GroupLabel
-            GroupLabel[abc]=int(current[current.find("_")+1:current.find(".txt")])
+            # global GroupLabel
+            rating=int(current[current.find("_")+1:current.find(".txt")])
+            GroupLabel.append(abc)
+            fileRatings.append(rating)
             a += 1
     print(global_nature+ " Files Read: %d" % howManyFiles,end="\n")
-    return str(fileContents)
+    return str(fileContents),GroupLabel,fileNames,fileRatings
 
 def wordFreqGenerator(words):
     d = defaultdict(int)
@@ -61,7 +66,7 @@ def writeHighFreqTermsToFile(location, fileToWrite, nature):
     global global_nature
     global_nature=nature
 
-    fileContents = readFiles(location, max_file_limit)
+    fileContents,GroupLabel,fileNames,fileRatings = readFiles(location, max_file_limit)
     tokens = refine(fileContents)
     words = nlt.trigrams(tokens)
     vectDict = wordFreqGenerator(words)
@@ -71,4 +76,4 @@ def writeHighFreqTermsToFile(location, fileToWrite, nature):
             fileToWrite.write(str(i) + "\n")
     temp = "There are " + str(vectDict.__len__()) + " " + nature + " Trigrams in Dictionary.\n\n"
     fileToWrite.write(temp)
-    return tokens,vectDict,wordVocab,GroupLabel
+    return tokens,vectDict,wordVocab,GroupLabel,fileNames,fileRatings

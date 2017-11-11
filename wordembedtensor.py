@@ -9,19 +9,6 @@ from keras.optimizers import SGD
 
 vector_dim=0
 # Model Hyperparameters
-embedding_dim = 50
-filter_sizes = (3, 8)
-num_filters = 10
-dropout_prob = (0.5, 0.8)
-hidden_dims = 50
-
-# Training parameters
-batch_size = 64
-num_epochs = 10
-
-# Prepossessing parameters
-sequence_length = 400
-max_words = 10000
 
 def kerasTokenizer(balanced_texts,max_sentence_length,topbestwords):
     global vector_dim
@@ -30,12 +17,12 @@ def kerasTokenizer(balanced_texts,max_sentence_length,topbestwords):
     tokenizer.fit_on_texts(balanced_texts)
     sequences = tokenizer.texts_to_sequences(balanced_texts)
     data = pad_sequences(sequences, maxlen=max_sentence_length,padding='pre')
-    # print(tokenizer.word_index)
+    # print(data[:2])
     return data,tokenizer.word_index
 
 def RNNModel():
     model = Sequential()
-    model.add(Embedding(max_words, 128, input_length=500))
+    model.add(Embedding(vector_dim, 128, input_length=500))
     model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))
     model.add(Dense(10, activation='sigmoid'))
     model.compile(loss='categorical_crossentropy', optimizer='sgd', metrics=['accuracy'])
@@ -50,7 +37,7 @@ def constructembedding(fileContents):
             embedding_matrix[i] = embedding_vector
     return model,embedding_matrix
 
-def CNNModel(embedding_matrix,max_limit):
+def CNNModel():
     # saved_embeddings = tf.constant(embedding_matrix)
     # embedding_layer = Embedding(max_limit,
     #                             vector_dim,
@@ -59,25 +46,28 @@ def CNNModel(embedding_matrix,max_limit):
     model=Sequential()
     # embedded_sequences = embedding_layer(sequence_input)
     # print(model.output_shape)
-    # model.add(Embedding(max_words,128,input_length=vector_dim))
+    # model.add(Embedding(10000,50,input_length=vector_dim))
     print(vector_dim)
-    model.add(Conv1D(250,kernel_size=3, activation='relu',input_shape=(vector_dim,1)))
+    np.random.seed(0)
+    # model.add(Conv1D(vector_dim, kernel_size=3, activation='relu', padding='valid', strides=1))
+    model.add(Conv1D(vector_dim,kernel_size=3, activation='relu',padding='valid',strides=1, input_shape=(vector_dim,1)))
+    model.add(Dropout(0.3))
+    model.add(MaxPooling1D(5))
+    model.add(Conv1D(250, kernel_size=2, activation='relu'))
+    model.add(Dropout(0.3))
+    model.add(MaxPooling1D(5))
     model.add(Dropout(0.5))
-    model.add(MaxPooling1D(5))
-    model.add(Conv1D(250, kernel_size=3, activation='relu'))
-    model.add(MaxPooling1D(5))
-    model.add(Conv1D(250, kernel_size=3, activation='relu'))
-    model.add(MaxPooling1D(10))
+    # model.add(Conv1D(250, kernel_size=3, activation='relu'))
+    # model.add(MaxPooling1D(10))
     model.add(Flatten())
-    model.add(Dropout(0.5))
-    model.add(Dense(10, activation='sigmoid'))
+    model.add(Dense(3, activation='softmax'))
     # sgd = SGD(lr=0.001, momentum=0.9, decay=0, nesterov=False)
     model.compile(loss='categorical_crossentropy',
-                  optimizer='adam',
+                  optimizer='sgd',
                   metrics=['acc'])
-    print("Output shape:",end="\n\n")
-    print(model.output_shape)
-    print(model.summary())
+    # print("Output shape:",end="\n\n")
+    # print(model.output_shape)
+    # print(model.summary())
     return model
     # print(model.summary())
     # model.fit(embedding_matrix[1],epochs=2)
