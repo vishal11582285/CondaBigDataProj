@@ -6,7 +6,7 @@ from collections import defaultdict, OrderedDict
 import nltk as nlt
 from nltk.corpus import stopwords
 
-max_file_limit =10
+max_file_limit =12500
 global_nature=""
 # GroupLabel=dict()
 wordVocab=defaultdict()

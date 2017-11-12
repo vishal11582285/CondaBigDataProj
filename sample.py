@@ -133,12 +133,14 @@ def generateClassLabels(allGroupValues):
     # class_labels_norm = np.zeros(len(allGroupValues))
     # class_labels_norm[0:int(len(allGroupValues) / 2)] = 1
     # class_labels_norm[int(len(allGroupValues) / 2):len(allGroupValues)] = 0
-    print(temp)
+    # print(temp)
     return temp
 
-
+'''Use this method if files are to be read and processed from disk.
+Comment out if using saved Pickle object for faster operations'''
 # processInput()
 
+#Read from Pickle Object
 allGroupKeys, allGroupValues, allFileNames, allFileRatings=readFromDisk()
 
 MAX_SENTENCE_LENGTH=getMAX_SENTENCE_LENGTH()
@@ -195,8 +197,11 @@ print(Counter(y_prob))
 # y_classes = y_classes = keras.utils.np_util np_utils.probas_to_classes(y_prob)
 # print(y_classes)
 # model.predict(finalSequence[:20],verbose=True)
-print(class_labels_norm)
+# print(class_labels_norm)
 print(Counter(class_labels_norm))
+
+score=model.evaluate(finalSequence,class_labels_norm)
+print(score)
 
 # serialize model to JSON
 model_json = model.to_json()
@@ -209,3 +214,10 @@ print("Saved model to disk")
 # later...
 
 # load json and create model
+
+abc=[]
+for i,j,k,l in zip(allFileNames,allFileRatings,class_labels_norm,y_prob):
+    abc.append(list([i,j,k,l]))
+
+dataFramePredicted=pd.DataFrame(abc,columns=list(["FileName","FileRating","TrueLabel","PredictedLabel"]))
+print(dataFramePredicted.head())
