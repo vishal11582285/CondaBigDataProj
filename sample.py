@@ -9,10 +9,11 @@ from collections import Counter
 
 import numpy as np
 import pandas as pd
-from basefunctions import writeHighFreqTermsToFile
-from wordembedtensor import kerasTokenizer, CNNModel
-from keras.models import model_from_json
 
+from basefunctions import writeHighFreqTermsToFile
+from wordembedtensor import kerasTokenizer,kerasTokenizerUnit, CNNModel
+from keras.models import model_from_json
+from keras.preprocessing.sequence import pad_sequences
 base_path_train = "data/aclImdb/train/"
 # base_path_train = "data/aclImdb/data/train/"
 
@@ -31,15 +32,15 @@ def load_model():
     json_file.close()
     loaded_model = model_from_json(loaded_model_json)
     # load weights into new model
-    loaded_model.load_weights("model.h5")
+    loaded_model.load_weights(base_path_output+"model.h5")
     print("Loaded model from disk")
-
     # evaluate loaded model on test data
     loaded_model.compile(loss='binary_crossentropy',
                          optimizer='adam',
                          metrics=['acc'])
-    score = loaded_model.evaluate(finalSequence, class_labels_norm, verbose=0)
-    print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1] * 100))
+    # score = loaded_model.evaluate(finalSequence, class_labels_norm, verbose=0)
+    # print("%s: %.2f%%" % (loaded_model.metrics_names[1], score[1] * 100))
+    return loaded_model
 
 def printDict(a):
     count=0
@@ -109,13 +110,26 @@ def getMAX_SENTENCE_LENGTH():
     MAX_SENTENCE_LENGTH = min(MAX_SENTENCE_LENGTH, 1000)
     return MAX_SENTENCE_LENGTH
 
+def saveModelToDisk(model):
+    # serialize model to JSON
+    model_json = model.to_json()
+    with open(base_path_output + "model.json", "w") as json_file:
+        json_file.write(model_json)
+    # serialize weights to HDF5
+    model.save_weights(base_path_output + "model.h5")
+    print("Saved model to disk")
+
+    # later...
+
+    # load json and create model
+
 def generateClassLabels(allGroupValues):
     class_labels = allGroupValues
     class_labels_norm = []
     custom_class_labels = []
 
     temp = np.zeros(len(allGroupValues))
-    print(temp)
+    # print(temp)
     for i,j in zip(class_labels,range(len(allGroupValues))):
         # temp=list(np.zeros(1))
         if (i in [1, 2, 3, 4, 5]):
@@ -134,6 +148,7 @@ def generateClassLabels(allGroupValues):
     # class_labels_norm[0:int(len(allGroupValues) / 2)] = 1
     # class_labels_norm[int(len(allGroupValues) / 2):len(allGroupValues)] = 0
     # print(temp)
+    temp=[int(i) for i in temp]
     return temp
 
 '''Use this method if files are to be read and processed from disk.
@@ -146,7 +161,7 @@ allGroupKeys, allGroupValues, allFileNames, allFileRatings=readFromDisk()
 MAX_SENTENCE_LENGTH=getMAX_SENTENCE_LENGTH()
 # MAX_SENTENCE_LENGTH=300
 
-topbestwords=50
+topbestwords=500
 # finalSequence,dict_sequence=kerasTokenizer(GroupLabelPos,MAX_SENTENCE_LENGTH,topbestwords)
 # for i in dict_sequence.items():
 #     if(int(i[1])<=topbestwords):
@@ -181,43 +196,44 @@ finalSequence=finalSequence.reshape(finalSequence.shape[0],finalSequence.shape[1
 #     print(i,class_labels_norm[j],end="\n")
 
 # model.fit(finalSequence,class_labels_norm, epochs=5, batch_size= 2)
-model.fit(finalSequence,class_labels_norm, epochs=10,batch_size=10)
-# model.save(base_path_output)
-#
-# plt.plot(hist.history['val_acc'])
-# plt.plot(hist.history['acc'])
-# plt.xlabel('cycle')
-# plt.ylabel('accuracy')
-# plt.show()
 
-y_prob = model.predict_classes(finalSequence)
-# y_prob=[i for i in y_prob]
-y_prob=[int(j) for i in y_prob for j in i]
+# This one:
+# This one:
+# model.fit(finalSequence,class_labels_norm, epochs=1,batch_size=10)
+# saveModelToDisk(model)
+
+model=load_model()
+
+y_prob=np.zeros(len(allGroupKeys))
+
+finalSequenceUnitTokenizer = kerasTokenizerUnit(allGroupKeys, MAX_SENTENCE_LENGTH, topbestwords)
+for i,j in zip(allGroupKeys,range(len(allGroupKeys))):
+    # finalSequenceUnit=kerasTokenizerUnit(allGroupKeys, MAX_SENTENCE_LENGTH, topbestwords,i)
+    # print(finalSequenceUnit)
+    # finalSequence = finalSequence.reshape(finalSequence.shape[0], finalSequence.shape[1])
+    this_sentence = list([i])
+    sequences = finalSequenceUnitTokenizer.texts_to_sequences(this_sentence)
+    finalSequenceUnit = pad_sequences(sequences, maxlen=MAX_SENTENCE_LENGTH, padding='pre')
+    y_prob[j]=model.predict_classes(finalSequenceUnit,verbose=0)
+    # print(y_prob[j])
+    # y_prob[j]=[int(k) for i in y_prob[j] for k in i]
+
+print("Predicted:")
 print(Counter(y_prob))
-# y_classes = y_classes = keras.utils.np_util np_utils.probas_to_classes(y_prob)
-# print(y_classes)
-# model.predict(finalSequence[:20],verbose=True)
-# print(class_labels_norm)
+
+print("Actual:")
 print(Counter(class_labels_norm))
 
-score=model.evaluate(finalSequence,class_labels_norm)
-print(score)
-
-# serialize model to JSON
-model_json = model.to_json()
-with open(base_path_output+"model.json", "w") as json_file:
-    json_file.write(model_json)
-# serialize weights to HDF5
-model.save_weights(base_path_output+"model.h5")
-print("Saved model to disk")
-
-# later...
-
-# load json and create model
+score=model.evaluate(finalSequence,class_labels_norm,verbose=0)
+print("The mode performed with "+ str(round(score[1]*100,2))+" Accuracy.")
 
 abc=[]
 for i,j,k,l in zip(allFileNames,allFileRatings,class_labels_norm,y_prob):
     abc.append(list([i,j,k,l]))
 
 dataFramePredicted=pd.DataFrame(abc,columns=list(["FileName","FileRating","TrueLabel","PredictedLabel"]))
-print(dataFramePredicted.head())
+
+summaryActualPredicted=open(base_path_output+"summaryActualPredicted.txt",'w')
+# print(dataFramePredicted)
+for i,j,k,l in zip(dataFramePredicted["FileName"],dataFramePredicted["FileRating"],dataFramePredicted["TrueLabel"],dataFramePredicted["PredictedLabel"]):
+    summaryActualPredicted.write(str(i) + "\t"+str(j)+"\t"+str(k)+"\t"+str(l)+"\n")

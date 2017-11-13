@@ -26,6 +26,22 @@ def kerasTokenizer(balanced_texts,max_sentence_length,topbestwords):
     tokenizer.word_index=OrderedDict(sorted(tokenizer.word_index.items(), key=lambda t: t[1]))
     return data,tokenizer.word_index
 
+def kerasTokenizerUnit(balanced_texts,max_sentence_length,topbestwords):
+    # max_sentence_length=20
+    global vector_dim
+    vector_dim=max_sentence_length
+    global top_words
+    top_words=topbestwords
+    tokenizer = Tokenizer(num_words=topbestwords)
+    tokenizer.fit_on_texts(balanced_texts)
+    # this_sentence=list([this_sentence])
+    # sequences = tokenizer.texts_to_sequences(this_sentence)
+    # data = pad_sequences(sequences, maxlen=max_sentence_length,padding='pre')
+    # # print(data[:2])
+    # tokenizer.word_index=OrderedDict(sorted(tokenizer.word_index.items(), key=lambda t: t[1]))
+    return tokenizer
+
+
 def RNNModel():
     model = Sequential()
     model.add(Embedding(vector_dim, 128, input_length=500))
