@@ -26,6 +26,19 @@ def kerasTokenizer(balanced_texts,max_sentence_length,topbestwords):
     tokenizer.word_index=OrderedDict(sorted(tokenizer.word_index.items(), key=lambda t: t[1]))
     return data,tokenizer.word_index
 
+def kerasTokenizerTest(balanced_texts1,balanced_texts2, max_sentence_length,topbestwords):
+    global vector_dim
+    vector_dim=max_sentence_length
+    global top_words
+    top_words=topbestwords
+    tokenizer = Tokenizer(num_words=topbestwords)
+    tokenizer.fit_on_texts(balanced_texts1)
+    sequences = tokenizer.texts_to_sequences(balanced_texts2)
+    data = pad_sequences(sequences, maxlen=max_sentence_length,padding='pre')
+    # print(data[:2])
+    tokenizer.word_index=OrderedDict(sorted(tokenizer.word_index.items(), key=lambda t: t[1]))
+    return data,tokenizer.word_index
+
 def kerasTokenizerUnit(balanced_texts,max_sentence_length,topbestwords):
     # max_sentence_length=20
     global vector_dim

@@ -119,3 +119,31 @@
 # # print(model.summary())
 #
 # # class_labels_norm.reshape(finalSequence.shape[0],class_labels_norm.shape[1],1)
+
+
+
+#Working :
+# finalSequence=finalSequence.reshape(finalSequence.shape[0],finalSequence.shape[1],1)
+# class_labels_norm=np.array(class_labels_norm)
+
+
+# finalSequence=finalSequence.reshape(finalSequence.shape[0],finalSequence.shape[1])
+# class_labels_norm=np.array(class_labels_norm)
+
+# for i,j in zip(finalSequence,range(len(finalSequence))):
+#     print(i,class_labels_norm[j],end="\n")
+
+# model.fit(finalSequence,class_labels_norm, epochs=5, batch_size= 2)
+
+# This one:
+# This one:
+# model.fit(finalSequence,class_labels_norm, epochs=1,batch_size=10)
+# saveModelToDisk(model)
+
+
+# for i in dict_sequence.items():
+#     if (int(i[1]) <= topbestwords):
+#         print(i, end="\n")
+
+# for i in range(5):
+#     print(GroupLabelPos[i] + "\t" + str(fileRatingsPos[i]),end="\n")
