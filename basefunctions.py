@@ -2,7 +2,8 @@ import os
 import string
 import sys
 from collections import defaultdict, OrderedDict
-
+# from sample import sentence_file_name_test,sentence_file_name_train
+# import sample as sp
 import nltk as nlt
 from nltk.corpus import stopwords
 
@@ -70,6 +71,12 @@ def writeHighFreqTermsToFile(location, fileToWrite, nature):
     global_nature=nature
 
     fileContents,GroupLabel,fileNames,fileRatings = readFiles(location, max_file_limit)
+    # if str(location).__contains__('train'):
+    #     print('Exec Train')
+    #     sp.saveToDiskGen(fileContents,sentence_file_name_train)
+    # if str(location).__contains__('train'):
+    #     print('Exec Test')
+    #     sp.saveToDiskGen(fileContents, sentence_file_name_test)
     tokens = refine(fileContents)
     words = nlt.trigrams(tokens)
     vectDict = wordFreqGenerator(words)
@@ -79,7 +86,7 @@ def writeHighFreqTermsToFile(location, fileToWrite, nature):
             fileToWrite.write(str(i) + "\n")
     temp = "There are " + str(vectDict.__len__()) + " " + nature + " Trigrams in Dictionary.\n\n"
     fileToWrite.write(temp)
-    return tokens,vectDict,wordVocab,GroupLabel,fileNames,fileRatings
+    return tokens,vectDict,wordVocab,GroupLabel,fileNames,fileRatings,fileContents
 
 def normalizeText(text):
     readContent = text

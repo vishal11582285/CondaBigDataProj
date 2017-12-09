@@ -18,6 +18,10 @@ base_path_train = "data/aclImdb/train/"
 base_path_test = "data/aclImdb/test/"
 pickle_file_name_train='storedDFforIMDBDatasetTrain.pickle'
 pickle_file_name_test='storedDFforIMDBDatasetTest.pickle'
+sentence_file_name_train_pos='sentenceRepoTrainPositive.pickle'
+sentence_file_name_train_neg='sentenceRepoTrainNegative.pickle'
+sentence_file_name_test_pos='sentenceRepoTestPositive.pickle'
+sentence_file_name_test_neg='sentenceRepoTestNegative.pickle'
 
 base_path_output = "data/"
 
@@ -76,6 +80,16 @@ def saveToDisk(allGroupKeys, allGroupValues, allFileNames, allFileRatings,fileNa
     dataframeToDisk.to_pickle(base_path_output + fileName)
     return "Successfully Written Data to Disk (Pickle Object) !"
 
+def saveToDiskGen(textInput,fileName):
+    listToWrite = []
+    for i in zip(textInput):
+        listToWrite.append([i])
+    listToWrite = np.array(listToWrite)
+    dataframeToDisk = pd.DataFrame(listToWrite)
+    # print(dataframeToDisk.head())
+    dataframeToDisk.to_pickle(base_path_output + fileName)
+    return "Successfully Written Data to Disk (Pickle Object) !"
+
 def readFromDisk(fileName):
     dataframeFromDisk = pd.read_pickle(base_path_output + fileName)
     allGroupKeys = []
@@ -91,9 +105,9 @@ def readFromDisk(fileName):
 
 def processInputTrain():
     outputResult = open(base_path_output + "/" + "outputResult.txt", 'w', encoding="utf8")
-    positiveCorpus, positiveVectDict, wordFreqPos, GroupLabelPos, fileNamesPos, fileRatingsPos = writeHighFreqTermsToFile(
+    positiveCorpus, positiveVectDict, wordFreqPos, GroupLabelPos, fileNamesPos, fileRatingsPos,fileContentsPos = writeHighFreqTermsToFile(
         base_path_train + "pos/", outputResult, "Positive")
-    negativeCorpus, negativeVectDict, wordFreqNeg, GroupLabelNeg, fileNamesNeg, fileRatingsNeg = writeHighFreqTermsToFile(
+    negativeCorpus, negativeVectDict, wordFreqNeg, GroupLabelNeg, fileNamesNeg, fileRatingsNeg,fileContentsNeg = writeHighFreqTermsToFile(
         base_path_train + "neg/", outputResult, "Negative")
     outputResult.close()
 
@@ -101,21 +115,14 @@ def processInputTrain():
     allGroupValues = fileRatingsPos + fileRatingsNeg
     allFileNames = fileNamesPos + fileNamesNeg
     allFileRatings = fileRatingsPos + fileRatingsNeg
-    print(saveToDisk(allGroupKeys, allGroupValues, allFileNames, allFileRatings))
+    allFileContents= fileContentsPos + fileContentsNeg
 
-def processInputTrain():
-    outputResult = open(base_path_output + "/" + "outputResult.txt", 'w', encoding="utf8")
-    positiveCorpus, positiveVectDict, wordFreqPos, GroupLabelPos, fileNamesPos, fileRatingsPos = writeHighFreqTermsToFile(
-        base_path_train + "pos/", outputResult, "Positive")
-    negativeCorpus, negativeVectDict, wordFreqNeg, GroupLabelNeg, fileNamesNeg, fileRatingsNeg = writeHighFreqTermsToFile(
-        base_path_train + "neg/", outputResult, "Negative")
-    outputResult.close()
-
-    allGroupKeys = GroupLabelPos + GroupLabelNeg
-    allGroupValues = fileRatingsPos + fileRatingsNeg
-    allFileNames = fileNamesPos + fileNamesNeg
-    allFileRatings = fileRatingsPos + fileRatingsNeg
     print(saveToDisk(allGroupKeys, allGroupValues, allFileNames, allFileRatings,fileName=pickle_file_name_train))
+    fileContentsPos=[str(i).split(sep='.') for i in fileContentsPos]
+    print('Prinitn numner dnetences:',end='\n')
+    print(len(fileContentsPos))
+    # print(saveToDiskGen(fileContentsPos,fileName=sentence_file_name_train_pos))
+    # print(saveToDiskGen(fileContentsNeg, fileName=sentence_file_name_train_neg))
     return allGroupKeys,allGroupValues,allFileNames,allFileRatings
 
 def processInputTest():
@@ -173,11 +180,12 @@ if __name__ == "__main__":
     Comment out if using saved Pickle object for faster operations'''
 
     print('Working on Training Data...',end="\n")
-    # allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain=processInputTrain()
+    allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain=processInputTrain()
 
     #Read from Pickle Object
-    print("Reading from Pickle Object Saved.",end="\n")
-    allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain=readFromDisk(pickle_file_name_train)
+    # print("Reading from Pickle Object Saved.",end="\n")
+    # allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain=readFromDisk(pickle_file_name_train)
+
     topbestwords = 1000
     MAX_SENTENCE_LENGTH=getMAX_SENTENCE_LENGTH()
     finalSequence, dict_sequence = kerasTokenizer(allGroupKeysTrain, MAX_SENTENCE_LENGTH, topbestwords)
