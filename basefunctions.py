@@ -24,6 +24,9 @@ def refine(fileContents):
     stop = sorted(
         stopwords.words('english') + list(string.punctuation) + ["i\\", "'m", "'s", "it\\", '...', "''", '``', 'br',
                                                                  's', '--'])
+    # print(len(stop))
+    stop.remove('not')
+    # print(len(stop))
     tokens = nlt.tokenize.word_tokenize(str(fileContents).lower())
     tokens = [w for w in tokens if w not in stop]
     global wordVocab
@@ -77,3 +80,8 @@ def writeHighFreqTermsToFile(location, fileToWrite, nature):
     temp = "There are " + str(vectDict.__len__()) + " " + nature + " Trigrams in Dictionary.\n\n"
     fileToWrite.write(temp)
     return tokens,vectDict,wordVocab,GroupLabel,fileNames,fileRatings
+
+def normalizeText(text):
+    readContent = text
+    normalizedText = ' '.join(refine(readContent))
+    return normalizedText

@@ -147,3 +147,20 @@
 
 # for i in range(5):
 #     print(GroupLabelPos[i] + "\t" + str(fileRatingsPos[i]),end="\n")
+
+
+
+# MAX_SENTENCE_LENGTH=300
+
+
+# finalSequence,dict_sequence=kerasTokenizer(GroupLabelPos,MAX_SENTENCE_LENGTH,topbestwords)
+# for i in dict_sequence.items():
+#     if(int(i[1])<=topbestwords):
+#         print(i,end="\n")
+#
+# finalSequence,dict_sequence=kerasTokenizer(GroupLabelNeg,MAX_SENTENCE_LENGTH,topbestwords)
+# for i in dict_sequence.items():
+#     if(int(i[1])<=topbestwords):
+#         print(i,end="\n")
+
+# print(class_labels_norm)

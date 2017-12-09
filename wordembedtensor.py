@@ -104,6 +104,7 @@ def CNNModel():
                   optimizer='adam',
                   metrics=['acc'])
 
+
     # print("Output shape:",end="\n\n")
     # print(model.output_shape)
     # print(model.summary())

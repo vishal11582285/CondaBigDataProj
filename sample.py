@@ -10,7 +10,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 
-from basefunctions import writeHighFreqTermsToFile
+from basefunctions import writeHighFreqTermsToFile,normalizeText
 from wordembedtensor import kerasTokenizer,kerasTokenizerUnit,kerasTokenizerTest,CNNModel
 from keras.models import model_from_json
 from keras.preprocessing.sequence import pad_sequences
@@ -116,6 +116,7 @@ def processInputTrain():
     allFileNames = fileNamesPos + fileNamesNeg
     allFileRatings = fileRatingsPos + fileRatingsNeg
     print(saveToDisk(allGroupKeys, allGroupValues, allFileNames, allFileRatings,fileName=pickle_file_name_train))
+    return allGroupKeys,allGroupValues,allFileNames,allFileRatings
 
 def processInputTest():
     outputResult = open(base_path_output + "/" + "outputResultTrain.txt", 'w', encoding="utf8")
@@ -130,7 +131,7 @@ def processInputTest():
     allFileNames = fileNamesPos + fileNamesNeg
     allFileRatings = fileRatingsPos + fileRatingsNeg
     print(saveToDisk(allGroupKeys, allGroupValues, allFileNames, allFileRatings,fileName=pickle_file_name_test))
-
+    return allGroupKeys, allGroupValues, allFileNames, allFileRatings
 
 def getMAX_SENTENCE_LENGTH():
     MAX_SENTENCE_LENGTH = 0
@@ -167,125 +168,107 @@ def generateClassLabels(allGroupValues):
     temp=[int(i) for i in temp]
     return temp
 
+if __name__ == "__main__":
+    '''Use this method if files are to be read and processed from disk.
+    Comment out if using saved Pickle object for faster operations'''
+
+    print('Working on Training Data...',end="\n")
+    # allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain=processInputTrain()
+
+    #Read from Pickle Object
+    print("Reading from Pickle Object Saved.",end="\n")
+    allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain=readFromDisk(pickle_file_name_train)
+    topbestwords = 1000
+    MAX_SENTENCE_LENGTH=getMAX_SENTENCE_LENGTH()
+    finalSequence, dict_sequence = kerasTokenizer(allGroupKeysTrain, MAX_SENTENCE_LENGTH, topbestwords)
+    class_labels_norm = generateClassLabels(allGroupValuesTrain)
+
+    #Fit Model on Training Data. Comment out if model is saved to disk.
+    # model=CNNModel()
+
+    model=load_model()
+
+    # model.fit(finalSequence,class_labels_norm, epochs=10,batch_size=10)
+    # saveModelToDisk(model)
+
+    y_prob=np.zeros(len(allGroupKeysTrain))
+
+    finalSequenceUnitTokenizer = kerasTokenizerUnit(allGroupKeysTrain, MAX_SENTENCE_LENGTH, topbestwords)
+    for i,j in zip(allGroupKeysTrain,range(len(allGroupKeysTrain))):
+        # finalSequenceUnit=kerasTokenizerUnit(allGroupKeys, MAX_SENTENCE_LENGTH, topbestwords,i)
+        # print(finalSequenceUnit)
+        # finalSequence = finalSequence.reshape(finalSequence.shape[0], finalSequence.shape[1])
+        # finalSequemodence = finalSequence.reshape(finalSequence.shape[0], finalSequence.shape[1])
+        this_sentence = list([i])
+        sequences = finalSequenceUnitTokenizer.texts_to_sequences(this_sentence)
+        finalSequenceUnit = pad_sequences(sequences, maxlen=MAX_SENTENCE_LENGTH, padding='pre')
+        y_prob[j]=model.predict_classes(finalSequenceUnit,verbose=0)
+        # print(y_prob[j])
+        # y_prob[j]=[int(k) for i in y_prob[j] for k in i]
+
+    print("Predicted:")
+    print(Counter(y_prob))
+
+    print("Actual:")
+    print(Counter(class_labels_norm))
+
+    model=load_model()
+    score=model.evaluate(finalSequence,class_labels_norm,verbose=0)
+    print("The model performed with "+ str(round(score[1]*100,2))+" Accuracy.")
+
+
+    abc=[]
+    for i,j,k,l in zip(allFileNamesTrain,allFileRatingsTrain,class_labels_norm,y_prob):
+        abc.append(list([i,j,k,l]))
+
+    dataFramePredicted=pd.DataFrame(abc,columns=list(["FileName","FileRating","TrueLabel","PredictedLabel"]))
+
+    summaryActualPredicted=open(base_path_output+"summaryActualPredicted.txt",'w')
+    # print(dataFramePredicted)
+    for i,j,k,l in zip(dataFramePredicted["FileName"],dataFramePredicted["FileRating"],dataFramePredicted["TrueLabel"],dataFramePredicted["PredictedLabel"]):
+        summaryActualPredicted.write(str(i) + "\t"+str(j)+"\t"+str(k)+"\t"+str(l)+"\n")
 
 
 
+    '''Reading Training Data'''
 
-'''Use this method if files are to be read and processed from disk.
-Comment out if using saved Pickle object for faster operations'''
-# processInput()
+    #Read from Pickle Object
 
-#Read from Pickle Object
-print("Reading from Pickle Object Saved.",end="\n")
-allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain=readFromDisk(pickle_file_name_train)
+    '''Use this method if Test set is to be read and processed from disk.
+    Comment out if using saved Pickle object for faster operations'''
 
-MAX_SENTENCE_LENGTH=getMAX_SENTENCE_LENGTH()
-# MAX_SENTENCE_LENGTH=300
+    # allGroupKeysTest, allGroupValuesTest, allFileNamesTest, allFileRatingsTest=processInputTest()
 
-topbestwords=1000
-# finalSequence,dict_sequence=kerasTokenizer(GroupLabelPos,MAX_SENTENCE_LENGTH,topbestwords)
-# for i in dict_sequence.items():
-#     if(int(i[1])<=topbestwords):
-#         print(i,end="\n")
-#
-# finalSequence,dict_sequence=kerasTokenizer(GroupLabelNeg,MAX_SENTENCE_LENGTH,topbestwords)
-# for i in dict_sequence.items():
-#     if(int(i[1])<=topbestwords):
-#         print(i,end="\n")
-finalSequence, dict_sequence = kerasTokenizer(allGroupKeysTrain, MAX_SENTENCE_LENGTH, topbestwords)
+    print("Reading from Pickle Object Saved.",end="\n")
+    allGroupKeysTest, allGroupValuesTest, allFileNamesTest, allFileRatingsTest=readFromDisk(pickle_file_name_test)
+    finalSequenceTest, dict_sequenceTest = kerasTokenizerTest(allGroupKeysTrain,allGroupKeysTest, MAX_SENTENCE_LENGTH, topbestwords)
 
-class_labels_norm=generateClassLabels(allGroupValuesTrain)
+    y_prob=np.zeros(len(allGroupKeysTest))
 
-# print(class_labels_norm)
+    model=load_model()
+    # score=model.evaluate(finalSequenceTrain,class_labels_norm,verbose=0)
 
-#Fit Model on Training Data. Comment out if model is saved to disk.
-# model=CNNModel()
+    finalSequenceUnitTokenizer = kerasTokenizerUnit(allGroupKeysTrain, MAX_SENTENCE_LENGTH, topbestwords)
+    for i,j in zip(allGroupKeysTest,range(len(allGroupKeysTest))):
+        # finalSequenceUnit=kerasTokenizerUnit(allGroupKeys, MAX_SENTENCE_LENGTH, topbestwords,i)
+        # print(finalSequenceUnit)
+        # finalSequence = finalSequence.reshape(finalSequence.shape[0], finalSequence.shape[1])
+        # finalSequemodence = finalSequence.reshape(finalSequence.shape[0], finalSequence.shape[1])
+        this_sentence = list([i])
+        sequences = finalSequenceUnitTokenizer.texts_to_sequences(this_sentence)
+        finalSequenceUnit = pad_sequences(sequences, maxlen=MAX_SENTENCE_LENGTH, padding='pre')
+        y_prob[j]=model.predict_classes(finalSequenceUnit,verbose=0)
+        # print(y_prob[j])
+        # y_prob[j]=[int(k) for i in y_prob[j] for k in i]
 
-model=load_model()
+    class_labels_norm=generateClassLabels(allGroupValuesTest)
 
-# model.fit(finalSequence,class_labels_norm, epochs=10,batch_size=10)
-# saveModelToDisk(model)
+    print("Predicted:")
+    print(Counter(y_prob))
 
-y_prob=np.zeros(len(allGroupKeysTrain))
+    print("Actual:")
+    print(Counter(class_labels_norm))
 
-finalSequenceUnitTokenizer = kerasTokenizerUnit(allGroupKeysTrain, MAX_SENTENCE_LENGTH, topbestwords)
-for i,j in zip(allGroupKeysTrain,range(len(allGroupKeysTrain))):
-    # finalSequenceUnit=kerasTokenizerUnit(allGroupKeys, MAX_SENTENCE_LENGTH, topbestwords,i)
-    # print(finalSequenceUnit)
-    # finalSequence = finalSequence.reshape(finalSequence.shape[0], finalSequence.shape[1])
-    # finalSequemodence = finalSequence.reshape(finalSequence.shape[0], finalSequence.shape[1])
-    this_sentence = list([i])
-    sequences = finalSequenceUnitTokenizer.texts_to_sequences(this_sentence)
-    finalSequenceUnit = pad_sequences(sequences, maxlen=MAX_SENTENCE_LENGTH, padding='pre')
-    y_prob[j]=model.predict_classes(finalSequenceUnit,verbose=0)
-    # print(y_prob[j])
-    # y_prob[j]=[int(k) for i in y_prob[j] for k in i]
-
-print("Predicted:")
-print(Counter(y_prob))
-
-print("Actual:")
-print(Counter(class_labels_norm))
-
-model=load_model()
-score=model.evaluate(finalSequence,class_labels_norm,verbose=0)
-print("The model performed with "+ str(round(score[1]*100,2))+" Accuracy.")
-
-
-abc=[]
-abc=[]
-for i,j,k,l in zip(allFileNamesTrain,allFileRatingsTrain,class_labels_norm,y_prob):
-    abc.append(list([i,j,k,l]))
-
-dataFramePredicted=pd.DataFrame(abc,columns=list(["FileName","FileRating","TrueLabel","PredictedLabel"]))
-
-summaryActualPredicted=open(base_path_output+"summaryActualPredicted.txt",'w')
-# print(dataFramePredicted)
-for i,j,k,l in zip(dataFramePredicted["FileName"],dataFramePredicted["FileRating"],dataFramePredicted["TrueLabel"],dataFramePredicted["PredictedLabel"]):
-    summaryActualPredicted.write(str(i) + "\t"+str(j)+"\t"+str(k)+"\t"+str(l)+"\n")
-
-
-
-'''Reading Training Data'''
-
-#Read from Pickle Object
-
-'''Use this method if Test set is to be read and processed from disk.
-Comment out if using saved Pickle object for faster operations'''
-
-# processInputTest()
-
-print("Reading from Pickle Object Saved.",end="\n")
-allGroupKeysTest, allGroupValuesTest, allFileNamesTest, allFileRatingsTest=readFromDisk(pickle_file_name_test)
-finalSequenceTest, dict_sequenceTest = kerasTokenizerTest(allGroupKeysTrain,allGroupKeysTest, MAX_SENTENCE_LENGTH, topbestwords)
-
-y_prob=np.zeros(len(allGroupKeysTest))
-
-model=load_model()
-# score=model.evaluate(finalSequenceTrain,class_labels_norm,verbose=0)
-
-finalSequenceUnitTokenizer = kerasTokenizerUnit(allGroupKeysTrain, MAX_SENTENCE_LENGTH, topbestwords)
-for i,j in zip(allGroupKeysTest,range(len(allGroupKeysTest))):
-    # finalSequenceUnit=kerasTokenizerUnit(allGroupKeys, MAX_SENTENCE_LENGTH, topbestwords,i)
-    # print(finalSequenceUnit)
-    # finalSequence = finalSequence.reshape(finalSequence.shape[0], finalSequence.shape[1])
-    # finalSequemodence = finalSequence.reshape(finalSequence.shape[0], finalSequence.shape[1])
-    this_sentence = list([i])
-    sequences = finalSequenceUnitTokenizer.texts_to_sequences(this_sentence)
-    finalSequenceUnit = pad_sequences(sequences, maxlen=MAX_SENTENCE_LENGTH, padding='pre')
-    y_prob[j]=model.predict_classes(finalSequenceUnit,verbose=0)
-    # print(y_prob[j])
-    # y_prob[j]=[int(k) for i in y_prob[j] for k in i]
-
-class_labels_norm=generateClassLabels(allGroupValuesTest)
-
-print("Predicted:")
-print(Counter(y_prob))
-
-print("Actual:")
-print(Counter(class_labels_norm))
-
-score=model.evaluate(finalSequenceTest,class_labels_norm,verbose=0)
-print("The model performed with "+ str(round(score[1]*100,2))+" Accuracy.")
-print("The model performed with "+ str(score[0])+" Loss.")
-
+    score=model.evaluate(finalSequenceTest,class_labels_norm,verbose=0)
+    print("The model performed with "+ str(round(score[1]*100,2))+" Accuracy.")
+    print("The model performed with "+ str(score[0])+" Loss.")
