@@ -3,6 +3,8 @@ import os
 import string
 import sys
 from nltk.corpus import stopwords
+import numpy as np
+from collections import Counter
 
 import pandas as pd
 from keras.preprocessing.sequence import pad_sequences
@@ -90,10 +92,11 @@ fileNamesNeg = []
 for a, b in zip(dataframeFromDiskPos[0], dataframeFromDiskPos[1]):
     fileContentsPos.append([a])
     fileNamesPos.append(b)
-for a in zip(dataframeFromDiskNeg[0], dataframeFromDiskNeg[1]):
+for a,b in zip(dataframeFromDiskNeg[0], dataframeFromDiskNeg[1]):
     fileContentsNeg.append([a])
     fileNamesNeg.append(b)
 
+print(fileNamesNeg[0],fileNamesNeg[1])
 
 '''Reading from Pickle Objects:'''
 dataframeFromDiskPosVect = pd.read_pickle(base_path_output + 'savedPickleSentenceVectorPos.pickle')
@@ -114,6 +117,9 @@ for a,b,c in zip(dataframeFromDiskNegVect[0],dataframeFromDiskNegVect[1],datafra
     vector_predict_sentence_classNeg.append(b)
     vector_predict_sentence_probNeg.append(c)
 
+print(fileNamesPos[0],fileNamesPos[1])
+print(fileNamesNeg[0],fileNamesNeg[1])
+
 posSentenceCount=0
 print('Processing Positive Files',end='\n')
 for x in range(0,len(fileContentsPos)):
@@ -128,13 +134,36 @@ for x in range(0,len(fileContentsNeg)):
     sentence_split=str(temp[0]).split('.')
     negSentenceCount+=len(sentence_split)-1
 
-print(posSentenceCount)
-print(negSentenceCount)
+# print(posSentenceCount)
+# print(negSentenceCount)
+
+predicted=np.zeros(len(fileNamesPos)+len(fileContentsNeg))
+
+for i in range(0,len(predicted)):
+    if(i<12500):
+        # print(fileNamesPos[i])
+        a=np.array(vector_predict_sentence_probPos[i])
+    # print(a,end='\n')
+        if len(a)!=0:
+            temp=(np.sum(a)/len(a))
+            predicted[i]=1 if temp>0.5 else 0
+    else:
+        # print(fileNamesNeg[i-12500])
+        a = np.array(vector_predict_sentence_probNeg[i-12500])
+        # print(a,end='\n')
+        if len(a)!=0:
+            temp=(np.sum(a)/len(a))
+            predicted[i]=1 if temp>0.6 else 0
+        # temp = (np.sum(a) / len(a))
+        # predicted[i] = 1 if temp > 0.5 else 0
+    # print(vector_predict_sentence_classPos[i],end='\n')
+    # # print(len(vector_predict_sentence_classPos[i]))
+
+print(Counter(predicted))
 
 
-for i in range(0,2):
-    print(vector_predict_sentence_classPos[i],end='\n')
-    print(len(vector_predict_sentence_classPos[i]))
+# for i in range(0,len(allFileNamesTrain)):
+#     print(str(allFileNamesTrain[i])+':'+str(predicted[i]))
 
 #
 #
@@ -218,6 +247,7 @@ for i in range(0,2):
 #     vector_predict_sentence_class.append(temp1)
 #     vector_predict_sentence_prob.append(temp2)
 #
+# print(fileNamesNeg[0],fileNamesNeg[1])
 # listToWrite = []
 # for i, j, k in zip(fileNamesNeg, vector_predict_sentence_class, vector_predict_sentence_prob):
 #     listToWrite.append([i, j, k, 0])
@@ -229,9 +259,8 @@ for i in range(0,2):
 #
 # print(negSentenceCount)
 
-
-
-
+# N= posSentenceCount + negSentenceCount
+# print(N)
 '''
 Implementing cost function:
 
@@ -253,4 +282,3 @@ lk=summation(yteta) : positive, else 0
 3) 
 
 '''
-
