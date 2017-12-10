@@ -1,10 +1,11 @@
+# from sample import sentence_file_name_test,sentence_file_name_train
+# import sample as sp
+import nltk as nlt
 import os
 import string
 import sys
 from collections import defaultdict, OrderedDict
-# from sample import sentence_file_name_test,sentence_file_name_train
-# import sample as sp
-import nltk as nlt
+# nlt.download()
 from nltk.corpus import stopwords
 
 max_file_limit =12500
@@ -49,7 +50,7 @@ def readFiles(path, howManyFiles):
             sys.stdout.flush()
         #     # print("Currently Reading File : " + currentFile + " .Poll Progress:" + "(" + str(a) + " of " + str(
             readContent=openFile.readline()
-            fileContents.append(readContent)
+            fileContents.append([readContent])
             abc=' '.join(refine(readContent))
             # global GroupLabel
             rating=int(current[current.find("_")+1:current.find(".txt")])
@@ -57,7 +58,8 @@ def readFiles(path, howManyFiles):
             fileRatings.append(rating)
             a += 1
     print(global_nature+ " Files Read: %d" % howManyFiles,end="\n")
-    return str(fileContents),GroupLabel,fileNames,fileRatings
+    # print(global_nature + " Sentence Blocks: %d" % len(fileContents), end="\n")
+    return fileContents, GroupLabel, fileNames, fileRatings
 
 def wordFreqGenerator(words):
     d = defaultdict(int)
@@ -86,6 +88,7 @@ def writeHighFreqTermsToFile(location, fileToWrite, nature):
             fileToWrite.write(str(i) + "\n")
     temp = "There are " + str(vectDict.__len__()) + " " + nature + " Trigrams in Dictionary.\n\n"
     fileToWrite.write(temp)
+    # print(fileContents[1:5])
     return tokens,vectDict,wordVocab,GroupLabel,fileNames,fileRatings,fileContents
 
 def normalizeText(text):

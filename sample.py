@@ -9,11 +9,12 @@ from collections import Counter
 
 import numpy as np
 import pandas as pd
-
-from basefunctions import writeHighFreqTermsToFile,normalizeText
-from wordembedtensor import kerasTokenizer,kerasTokenizerUnit,kerasTokenizerTest,CNNModel
 from keras.models import model_from_json
 from keras.preprocessing.sequence import pad_sequences
+
+from basefunctions import writeHighFreqTermsToFile
+from wordembedtensor import kerasTokenizer, kerasTokenizerUnit, kerasTokenizerTest
+
 base_path_train = "data/aclImdb/train/"
 base_path_test = "data/aclImdb/test/"
 pickle_file_name_train='storedDFforIMDBDatasetTrain.pickle'
@@ -80,13 +81,14 @@ def saveToDisk(allGroupKeys, allGroupValues, allFileNames, allFileRatings,fileNa
     dataframeToDisk.to_pickle(base_path_output + fileName)
     return "Successfully Written Data to Disk (Pickle Object) !"
 
-def saveToDiskGen(textInput,fileName):
+
+def saveToDiskGen(textInput, allFileNames, fileName):
     listToWrite = []
-    for i in zip(textInput):
-        listToWrite.append([i])
-    listToWrite = np.array(listToWrite)
+    for i, j in zip(textInput, allFileNames):
+        listToWrite.append([[i], j])
+    # listToWrite = np.array(listToWrite)
     dataframeToDisk = pd.DataFrame(listToWrite)
-    # print(dataframeToDisk.head())
+    print(dataframeToDisk.head())
     dataframeToDisk.to_pickle(base_path_output + fileName)
     return "Successfully Written Data to Disk (Pickle Object) !"
 
@@ -115,14 +117,15 @@ def processInputTrain():
     allGroupValues = fileRatingsPos + fileRatingsNeg
     allFileNames = fileNamesPos + fileNamesNeg
     allFileRatings = fileRatingsPos + fileRatingsNeg
-    allFileContents= fileContentsPos + fileContentsNeg
+    # allFileContents= fileContentsPos + fileContentsNeg
 
     print(saveToDisk(allGroupKeys, allGroupValues, allFileNames, allFileRatings,fileName=pickle_file_name_train))
-    fileContentsPos=[str(i).split(sep='.') for i in fileContentsPos]
+    # fileContentsPos=[str(i).split(sep='.') for i in fileContentsPos]
     print('Prinitn numner dnetences:',end='\n')
-    print(len(fileContentsPos))
-    # print(saveToDiskGen(fileContentsPos,fileName=sentence_file_name_train_pos))
-    # print(saveToDiskGen(fileContentsNeg, fileName=sentence_file_name_train_neg))
+    # print(len(fileContentsPos))
+    # print(allFileContents)
+    print(saveToDiskGen(fileContentsPos, fileNamesPos, fileName=sentence_file_name_train_pos))
+    print(saveToDiskGen(fileContentsNeg, fileNamesNeg, fileName=sentence_file_name_train_neg))
     return allGroupKeys,allGroupValues,allFileNames,allFileRatings
 
 def processInputTest():
