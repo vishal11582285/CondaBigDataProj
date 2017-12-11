@@ -121,10 +121,20 @@ print(fileNamesPos[0],fileNamesPos[1])
 print(fileNamesNeg[0],fileNamesNeg[1])
 
 posSentenceCount=0
+sent_prob={}
 print('Processing Positive Files',end='\n')
 for x in range(0,len(fileContentsPos)):
     temp=[k for i in fileContentsPos[x] for j in i for k in j]
     sentence_split=str(temp[0]).split('.')
+    for i in sentence_split[0:len(sentence_split) - 1]:
+        norm_text = normalizeText(i)
+        # print(norm_text)
+        j = predictresp(model, finalSequenceUnitTokenizer, [norm_text])
+        for a, b in list(j):
+            sentence_class = int(a)
+            sentence_prob = float(b)
+            # print('Hit')
+            sent_prob[i]=sentence_prob
     posSentenceCount+=len(sentence_split)-1
 
 negSentenceCount=0
@@ -132,7 +142,16 @@ print('Processing Negative Files',end='\n')
 for x in range(0,len(fileContentsNeg)):
     temp=[k for i in fileContentsNeg[x] for j in i for k in j]
     sentence_split=str(temp[0]).split('.')
+    for i in sentence_split[0:len(sentence_split) - 1]:
+        norm_text = normalizeText(i)
+        # print(norm_text)
+        j = predictresp(model, finalSequenceUnitTokenizer, [norm_text])
+        for a, b in list(j):
+            sentence_class = int(a)
+            sentence_prob = float(b)
+            sent_prob[i]=sentence_prob
     negSentenceCount+=len(sentence_split)-1
+
 
 # print(posSentenceCount)
 # print(negSentenceCount)
@@ -161,6 +180,7 @@ for i in range(0,len(predicted)):
 
 print(Counter(predicted))
 
+print(fileContentsPos[1:5])
 
 # for i in range(0,len(allFileNamesTrain)):
 #     print(str(allFileNamesTrain[i])+':'+str(predicted[i]))
