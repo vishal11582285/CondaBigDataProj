@@ -130,9 +130,9 @@ def processInputTrain():
 
 def processInputTest():
     outputResult = open(base_path_output + "/" + "outputResultTrain.txt", 'w', encoding="utf8")
-    positiveCorpus, positiveVectDict, wordFreqPos, GroupLabelPos, fileNamesPos, fileRatingsPos = writeHighFreqTermsToFile(
+    positiveCorpus, positiveVectDict, wordFreqPos, GroupLabelPos, fileNamesPos, fileRatingsPos, fileContentsPos = writeHighFreqTermsToFile(
         base_path_test + "pos/", outputResult, "Positive")
-    negativeCorpus, negativeVectDict, wordFreqNeg, GroupLabelNeg, fileNamesNeg, fileRatingsNeg = writeHighFreqTermsToFile(
+    negativeCorpus, negativeVectDict, wordFreqNeg, GroupLabelNeg, fileNamesNeg, fileRatingsNeg, fileContentsNeg = writeHighFreqTermsToFile(
         base_path_test + "neg/", outputResult, "Negative")
     outputResult.close()
 
@@ -141,6 +141,8 @@ def processInputTest():
     allFileNames = fileNamesPos + fileNamesNeg
     allFileRatings = fileRatingsPos + fileRatingsNeg
     print(saveToDisk(allGroupKeys, allGroupValues, allFileNames, allFileRatings,fileName=pickle_file_name_test))
+    print(saveToDiskGen(fileContentsPos, fileNamesPos, fileName=sentence_file_name_test_pos))
+    print(saveToDiskGen(fileContentsNeg, fileNamesNeg, fileName=sentence_file_name_test_neg))
     return allGroupKeys, allGroupValues, allFileNames, allFileRatings
 
 def getMAX_SENTENCE_LENGTH():
@@ -182,12 +184,13 @@ if __name__ == "__main__":
     '''Use this method if files are to be read and processed from disk.
     Comment out if using saved Pickle object for faster operations'''
 
-    print('Working on Training Data...',end="\n")
-    allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain=processInputTrain()
+    # print('Working on Training Data...',end="\n")
+    # allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain=processInputTrain()
 
     #Read from Pickle Object
-    # print("Reading from Pickle Object Saved.",end="\n")
-    # allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain=readFromDisk(pickle_file_name_train)
+    print("Reading from Pickle Object Saved.", end="\n")
+    allGroupKeysTrain, allGroupValuesTrain, allFileNamesTrain, allFileRatingsTrain = readFromDisk(
+        pickle_file_name_train)
 
     topbestwords = 1000
     MAX_SENTENCE_LENGTH=getMAX_SENTENCE_LENGTH()
@@ -239,19 +242,17 @@ if __name__ == "__main__":
     for i,j,k,l in zip(dataFramePredicted["FileName"],dataFramePredicted["FileRating"],dataFramePredicted["TrueLabel"],dataFramePredicted["PredictedLabel"]):
         summaryActualPredicted.write(str(i) + "\t"+str(j)+"\t"+str(k)+"\t"+str(l)+"\n")
 
-
-
-    '''Reading Training Data'''
+    '''Reading Test Data'''
 
     #Read from Pickle Object
 
     '''Use this method if Test set is to be read and processed from disk.
     Comment out if using saved Pickle object for faster operations'''
 
-    # allGroupKeysTest, allGroupValuesTest, allFileNamesTest, allFileRatingsTest=processInputTest()
+    allGroupKeysTest, allGroupValuesTest, allFileNamesTest, allFileRatingsTest = processInputTest()
 
-    print("Reading from Pickle Object Saved.",end="\n")
-    allGroupKeysTest, allGroupValuesTest, allFileNamesTest, allFileRatingsTest=readFromDisk(pickle_file_name_test)
+    # print("Reading from Pickle Object Saved.",end="\n")
+    # allGroupKeysTest, allGroupValuesTest, allFileNamesTest, allFileRatingsTest=readFromDisk(pickle_file_name_test)
     finalSequenceTest, dict_sequenceTest = kerasTokenizerTest(allGroupKeysTrain,allGroupKeysTest, MAX_SENTENCE_LENGTH, topbestwords)
 
     y_prob=np.zeros(len(allGroupKeysTest))
@@ -279,6 +280,9 @@ if __name__ == "__main__":
 
     print("Actual:")
     print(Counter(class_labels_norm))
+
+    print(Counter(y_prob[0:12499]))
+    print(Counter(y_prob[12500:24999]))
 
     score=model.evaluate(finalSequenceTest,class_labels_norm,verbose=0)
     print("The model performed with "+ str(round(score[1]*100,2))+" Accuracy.")

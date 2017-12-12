@@ -1,13 +1,12 @@
+from collections import OrderedDict
+
 import numpy as np
 from gensim.models import Word2Vec
-from keras.layers import Dense, Flatten, LSTM, MaxPooling1D, Conv1D,Dropout
+from keras.layers import Dense, Flatten, LSTM, MaxPooling1D, Conv1D, Dropout
 from keras.layers import Embedding
 from keras.models import Sequential
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
-from collections import defaultdict, OrderedDict
-from keras.optimizers import SGD
-from keras import backend as K
 
 vector_dim=0
 top_words=0
@@ -104,10 +103,9 @@ def CNNModel():
                   optimizer='adam',
                   metrics=['acc'])
 
-
-    # print("Output shape:",end="\n\n")
-    # print(model.output_shape)
-    # print(model.summary())
+    print("Output shape:", end="\n\n")
+    print(model.output_shape)
+    print(model.summary())
     return model
     # print(model.summary())
     # model.fit(embedding_matrix[1],epochs=2)

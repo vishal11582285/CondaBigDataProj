@@ -2,14 +2,14 @@ import nltk as nlt
 import os
 import string
 import sys
-from nltk.corpus import stopwords
-import numpy as np
 from collections import Counter
+from nltk.corpus import stopwords
 
+import numpy as np
 import pandas as pd
 from keras.preprocessing.sequence import pad_sequences
 
-from basefunctions import normalizeText, writeHighFreqTermsToFile
+from basefunctions import writeHighFreqTermsToFile
 from sample import load_model, readFromDisk, pickle_file_name_train, base_path_output, base_path_test, \
     sentence_file_name_train_neg, sentence_file_name_train_pos
 from wordembedtensor import kerasTokenizerUnit
@@ -74,7 +74,6 @@ def processInputTest():
     # print(saveToDisk(allGroupKeys, allGroupValues, allFileNames, allFileRatings,fileName=pickle_file_name_test))
     return allGroupKeys, allGroupValues, allFileNames, allFileRatings
 
-
 model=load_model()
 
 print("Reading from Pickle Object Saved.",end="\n")
@@ -102,8 +101,8 @@ print(fileNamesNeg[0],fileNamesNeg[1])
 dataframeFromDiskPosVect = pd.read_pickle(base_path_output + 'savedPickleSentenceVectorPos.pickle')
 dataframeFromDiskNegVect = pd.read_pickle(base_path_output + 'savedPickleSentenceVectorNeg.pickle')
 
-# print(pd.DataFrame(dataframeFromDiskNegVect).head())
-# print(pd.DataFrame(dataframeFromDiskPosVect).shape)
+print(pd.DataFrame(dataframeFromDiskNegVect).head())
+print(pd.DataFrame(dataframeFromDiskPosVect).shape)
 
 fileNamesNeg,vector_predict_sentence_classNeg, vector_predict_sentence_probNeg = [],[],[]
 fileNamesPos,vector_predict_sentence_classPos, vector_predict_sentence_probPos = [],[],[]
@@ -117,44 +116,53 @@ for a,b,c in zip(dataframeFromDiskNegVect[0],dataframeFromDiskNegVect[1],datafra
     vector_predict_sentence_classNeg.append(b)
     vector_predict_sentence_probNeg.append(c)
 
+for a, b, c in zip(fileNamesNeg, vector_predict_sentence_probNeg, vector_predict_sentence_classNeg):
+    print(a, end='\n')
+    print(b, end='\n')
+    print(c, end='\n')
+
+
 print(fileNamesPos[0],fileNamesPos[1])
 print(fileNamesNeg[0],fileNamesNeg[1])
 
-posSentenceCount=0
-sent_prob={}
-print('Processing Positive Files',end='\n')
-for x in range(0,len(fileContentsPos)):
-    temp=[k for i in fileContentsPos[x] for j in i for k in j]
-    sentence_split=str(temp[0]).split('.')
-    for i in sentence_split[0:len(sentence_split) - 1]:
-        norm_text = normalizeText(i)
+posSentenceCount = 0
+sent_prob = {}
+print('Processing Positive Files', end='\n')
+for x in range(0, len(fileContentsPos)):
+    temp = [k for i in fileContentsPos[x] for j in i for k in j]
+    sentence_split = str(temp[0]).split('.')
+    # for i in sentence_split[0:len(sentence_split) - 1]:
+    #     norm_text = normalizeText(i)
         # print(norm_text)
-        j = predictresp(model, finalSequenceUnitTokenizer, [norm_text])
-        for a, b in list(j):
-            sentence_class = int(a)
-            sentence_prob = float(b)
-            # print('Hit')
-            sent_prob[i]=sentence_prob
-    posSentenceCount+=len(sentence_split)-1
+    # j = predictresp(model, finalSequenceUnitTokenizer, [norm_text])
+    # for a, b in list(j):
+    #     sentence_class = int(a)
+    #     sentence_prob = float(b)
+    #     # print('Hit')
+    #     sent_prob[i] = sentence_prob
+    posSentenceCount += len(sentence_split) - 1
+
 
 negSentenceCount=0
 print('Processing Negative Files',end='\n')
 for x in range(0,len(fileContentsNeg)):
     temp=[k for i in fileContentsNeg[x] for j in i for k in j]
     sentence_split=str(temp[0]).split('.')
-    for i in sentence_split[0:len(sentence_split) - 1]:
-        norm_text = normalizeText(i)
+    # for i in sentence_split[0:len(sentence_split) - 1]:
+    #     norm_text = normalizeText(i)
         # print(norm_text)
-        j = predictresp(model, finalSequenceUnitTokenizer, [norm_text])
-        for a, b in list(j):
-            sentence_class = int(a)
-            sentence_prob = float(b)
-            sent_prob[i]=sentence_prob
+    # j = predictresp(model, finalSequenceUnitTokenizer, [norm_text])
+    # for a, b in list(j):
+    #     sentence_class = int(a)
+    #     sentence_prob = float(b)
+    #     sent_prob[i]=sentence_prob
     negSentenceCount+=len(sentence_split)-1
 
+for i, j in sent_prob.items():
+    print(str(i), float(j), end='\n')
 
-# print(posSentenceCount)
-# print(negSentenceCount)
+print(posSentenceCount)
+print(negSentenceCount)
 
 predicted=np.zeros(len(fileNamesPos)+len(fileContentsNeg))
 
@@ -176,21 +184,22 @@ for i in range(0,len(predicted)):
         # temp = (np.sum(a) / len(a))
         # predicted[i] = 1 if temp > 0.5 else 0
     # print(vector_predict_sentence_classPos[i],end='\n')
-    # # print(len(vector_predict_sentence_classPos[i]))
+    # print(len(vector_predict_sentence_classPos[i]))
 
-print(Counter(predicted))
-
-print(fileContentsPos[1:5])
-
+print(Counter(predicted[0:12500]))
+print(Counter(predicted[12500:25000]))
+#
+# print(fileContentsPos[1:5])
+#
 # for i in range(0,len(allFileNamesTrain)):
 #     print(str(allFileNamesTrain[i])+':'+str(predicted[i]))
-
+#
 #
 #
 #
 # print(len(fileContentsPos))
 # print(len(fileContentsNeg))
-
+#
 # dataframeFromDiskPos=pd.DataFrame(dataframeFromDiskPos)
 # print(dataframeFromDiskPos.shape)
 
@@ -233,7 +242,7 @@ print(fileContentsPos[1:5])
 # print(dataframeToDisk.shape)
 # print(dataframeToDisk.head())
 # # print(dataframeToDisk[1])
-# dataframeToDisk.to_pickle(base_path_output + 'savedPickleSentenceVectorPos.pickle')
+# dataframeToDisk.to_pickle(base_path_output + 'savedPickleSentenceVectorPosTest.pickle')
 # print("Successfully Written Data to Disk (Pickle Object) !")
 #
 # print(posSentenceCount)
@@ -267,18 +276,18 @@ print(fileContentsPos[1:5])
 #     vector_predict_sentence_class.append(temp1)
 #     vector_predict_sentence_prob.append(temp2)
 #
-# print(fileNamesNeg[0],fileNamesNeg[1])
+# # print(fileNamesNeg[0],fileNamesNeg[1])
 # listToWrite = []
 # for i, j, k in zip(fileNamesNeg, vector_predict_sentence_class, vector_predict_sentence_prob):
 #     listToWrite.append([i, j, k, 0])
 # dataframeToDisk = pd.DataFrame(listToWrite)
 # print(dataframeToDisk.shape)
 # print(dataframeToDisk.head())
-# dataframeToDisk.to_pickle(base_path_output + 'savedPickleSentenceVectorNeg.pickle')
+# dataframeToDisk.to_pickle(base_path_output + 'savedPickleSentenceVectorNegTest.pickle')
 # print("Successfully Written Data to Disk (Pickle Object) !")
 #
 # print(negSentenceCount)
-
+#
 # N= posSentenceCount + negSentenceCount
 # print(N)
 '''
